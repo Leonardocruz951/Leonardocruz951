@@ -1,0 +1,52 @@
+import pandas as pd
+import numpy as np
+from scipy import stats
+
+# 1. Leer el archivo
+url = 'https://raw.githubusercontent.com/Benjacho/youtube-projects/master/statistics_python_shoes_store/shoes_dataset.csv'
+df = pd.read_csv(url)
+
+# 2. Normalizar nombres de columnas
+df.columns = df.columns.str.strip().str.lower()
+
+# Mostrar nombres de columnas para confirmar
+print("Columnas:", df.columns.tolist())
+
+# 3. Limpiar y convertir saleprice a número flotante
+df['saleprice'] = (
+    df['saleprice']
+    .astype(str)
+    .str.replace(r'[^\d.]', '', regex=True)
+    .replace('', np.nan)
+    .astype(float)
+)
+
+# 4. Eliminar valores nulos
+sale_prices = df['saleprice'].dropna()
+
+# 5. Estadísticas básicas
+mean_price = sale_prices.mean()
+median_price = sale_prices.median()
+mode_price = sale_prices.mode().iloc[0]
+std_price = sale_prices.std()
+n = len(sale_prices)
+
+# 6. Intervalo de confianza del 95%
+sem = std_price / np.sqrt(n)
+ci_lower, ci_upper = stats.norm.interval(0.95, loc=mean_price, scale=sem)
+
+print(f"\n--- Estadísticas de 'saleprice' ---")
+print(f"Media: {mean_price:.2f}")
+print(f"Mediana: {median_price:.2f}")
+print(f"Moda: {mode_price:.2f}")
+print(f"Desviación estándar: {std_price:.2f}")
+print(f"IC 95%: [{ci_lower:.2f}, {ci_upper:.2f}]")
+
+# 7. Distribución de Poisson
+poisson_lambda = mean_price
+k_vals = np.arange(int(mean_price - 3), int(mean_price + 4))
+poisson_pmf = stats.poisson(mu=poisson_lambda).pmf(k_vals)
+
+print("\nDistribución de Poisson (λ = media de saleprice):")
+for k, p in zip(k_vals, poisson_pmf):
+    print(f"P(X = {k}) = {p:.6f}")
